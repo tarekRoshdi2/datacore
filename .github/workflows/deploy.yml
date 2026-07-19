@@ -1,4 +1,4 @@
-name: Deploy to Hostinger
+name: 🚀 Deploy to Hostinger
 
 on:
   push:
@@ -6,32 +6,40 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
+    name: Build & Deploy
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      # ── 1. سحب الكود ──────────────────────────────────
+      - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      # ── 2. إعداد Node.js ──────────────────────────────
+      - name: ⚙️ Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install Dependencies
-        run: |
-          npm ci
-          npm ci --prefix server
+      # ── 3. تثبيت مكتبات الـ Frontend ──────────────────
+      - name: 📦 Install Frontend Dependencies
+        run: npm ci
 
-      - name: Build Frontend Application
+      # ── 4. تثبيت مكتبات الـ Backend ───────────────────
+      - name: 📦 Install Backend Dependencies
+        run: npm ci --prefix server
+
+      # ── 5. بناء الـ Frontend مع المتغيرات البيئية ─────
+      - name: 🏗️ Build Frontend
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: npm run build
 
-      - name: Deploy to Hostinger via SSH
-        if: ${{ secrets.HOSTINGER_HOST != '' }}
+      # ── 6. نشر على Hostinger عبر SSH ──────────────────
+      - name: 🚀 Deploy to Hostinger via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOSTINGER_HOST }}
@@ -39,8 +47,22 @@ jobs:
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           port: ${{ secrets.HOSTINGER_PORT || 22 }}
           script: |
-            cd public_html || cd ~/public_html || exit 1
+            echo "📂 Moving to project directory..."
+            cd ~/domains/data.expocore.net/public_html
+
+            echo "⬇️ Pulling latest code..."
             git pull origin main
-            npm install --production
+
+            echo "📦 Installing dependencies..."
+            npm ci --production
+            npm ci --prefix server --production
+
+            echo "🏗️ Building frontend..."
+            export VITE_SUPABASE_URL="${{ secrets.VITE_SUPABASE_URL }}"
+            export VITE_SUPABASE_ANON_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}"
             npm run build
-            pm2 restart all || touch tmp/restart.txt
+
+            echo "♻️ Restarting server..."
+            pm2 restart datacore --update-env || pm2 start server/server.js --name datacore
+
+            echo "✅ Deployment complete!"

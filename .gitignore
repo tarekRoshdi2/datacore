@@ -29,3 +29,9 @@ server/telegram_settings.json
 server/telegram_tasks.json
 server/scraped_folders/
 
+# Environment variables (sensitive - never commit)
+.env
+.env.local
+.env.production
+# Keep the example file
+!.env.example

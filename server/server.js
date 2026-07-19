@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
@@ -145,7 +146,7 @@ app.post('/api/scrape/web', async (req, res) => {
 app.post('/api/scrape/maps', async (req, res) => {
     const { query, location, mapReviews, mapPhones, mapWebsites, mapAddress } = req.body;
 
-    const API_KEY = 'AIzaSyBaeqVsZuiAKe7tPpHuFqBWj0LMPuXpp2c';
+    const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
     const searchQuery = `${query} in ${location}`;
 
     try {
